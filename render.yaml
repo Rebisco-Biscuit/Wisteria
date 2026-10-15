@@ -1,0 +1,28 @@
+# Render blueprint. Render's free plan wipes the disk on every deploy/restart,
+# so files are kept in an S3-compatible bucket (Cloudflare R2's free tier works well).
+# See the README for the persistent-disk alternative.
+services:
+  - type: web
+    name: wisteria
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION
+        value: auto

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Wisteria</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='9' r='5' fill='%23a78bfa'/><circle cx='11' cy='17' r='4.5' fill='%238b5cf6'/><circle cx='21' cy='17' r='4.5' fill='%238b5cf6'/><circle cx='16' cy='24' r='4' fill='%237c3aed'/></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="login" class="login" hidden>
+    <form id="login-form" class="login-card">
+      <h1>Wisteria</h1>
+      <p class="muted">Enter the vault password.</p>
+      <input id="password" type="password" autocomplete="current-password" placeholder="Password" required autofocus>
+      <button type="submit" class="btn primary">Open vault</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+  </section>
+
+  <section id="app" hidden>
+    <header class="topbar">
+      <h1 class="brand">Wisteria</h1>
+      <input id="search" type="search" placeholder="Search…" aria-label="Search the vault">
+      <div class="actions">
+        <label class="btn primary">
+          Upload
+          <input id="file-input" type="file" multiple hidden>
+        </label>
+        <button id="logout" class="btn ghost" type="button">Lock</button>
+      </div>
+    </header>
+
+    <div id="progress" class="progress" hidden>
+      <div class="progress-bar"><span id="progress-fill"></span></div>
+      <span id="progress-text"></span>
+    </div>
+
+    <main>
+      <p id="stats" class="muted stats"></p>
+      <div id="grid" class="grid"></div>
+      <div id="empty" class="empty" hidden>
+        <p><strong>The vault is empty.</strong></p>
+        <p class="muted">Drop files anywhere on the page, or use Upload.<br>
+          Upload <code>art.psd</code> with <code>art.png</code> and they get their own <code>art</code> folder.</p>
+      </div>
+    </main>
+
+    <div id="dropzone" class="dropzone" hidden><div>Drop to upload</div></div>
+  </section>
+
+  <dialog id="detail" class="detail">
+    <div class="detail-head">
+      <h2 id="detail-title"></h2>
+      <button class="btn ghost icon" type="button" data-close aria-label="Close">✕</button>
+    </div>
+    <div id="detail-preview" class="detail-preview"></div>
+    <ul id="detail-files" class="detail-files"></ul>
+    <div class="detail-foot">
+      <button id="detail-delete" class="btn danger" type="button">Delete</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
