@@ -1,6 +1,6 @@
-// Two storage backends with the same shape:
+// Files live on local disk under STORAGE_DIR. The interface:
 //   list()            -> [{ key, size, mtime }]   (key is "file.ext" or "folder/file.ext")
-//   put(key, tmpPath) -> moves/uploads a temp file into the vault
+//   put(key, tmpPath) -> moves a temp file into the vault
 //   move(from, to)
 //   remove(key)
 //   removeFolder(folder)
@@ -22,7 +22,7 @@ function localStorage(root) {
     try {
       await fsp.rename(src, dest);
     } catch (err) {
-      // tmp dir may live on another device (e.g. Render disk mount)
+      // tmp dir may live on another device
       if (err.code !== 'EXDEV') throw err;
       await fsp.copyFile(src, dest);
       await fsp.unlink(src);
@@ -30,7 +30,6 @@ function localStorage(root) {
   }
 
   return {
-    kind: 'local',
     async list() {
       const out = [];
       for (const ent of await fsp.readdir(root, { withFileTypes: true })) {
@@ -82,85 +81,7 @@ function localStorage(root) {
   };
 }
 
-function s3Storage(cfg) {
-  const {
-    S3Client, ListObjectsV2Command, CopyObjectCommand,
-    DeleteObjectCommand, GetObjectCommand,
-  } = require('@aws-sdk/client-s3');
-  const { Upload } = require('@aws-sdk/lib-storage');
-
-  const client = new S3Client({
-    region: cfg.region || 'auto',
-    endpoint: cfg.endpoint || undefined,
-    forcePathStyle: !!cfg.endpoint,
-    credentials: { accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey },
-  });
-  const Bucket = cfg.bucket;
-  const prefix = cfg.prefix ? cfg.prefix.replace(/\/?$/, '/') : '';
-  const k = (key) => prefix + key;
-
-  async function list() {
-    const out = [];
-    let ContinuationToken;
-    do {
-      const res = await client.send(new ListObjectsV2Command({ Bucket, Prefix: prefix, ContinuationToken }));
-      for (const obj of res.Contents || []) {
-        const key = obj.Key.slice(prefix.length);
-        if (!key || key.endsWith('/') || key.split('/').length > 2) continue;
-        out.push({ key, size: obj.Size, mtime: obj.LastModified ? obj.LastModified.getTime() : 0 });
-      }
-      ContinuationToken = res.IsTruncated ? res.NextContinuationToken : undefined;
-    } while (ContinuationToken);
-    return out;
-  }
-
-  return {
-    kind: 's3',
-    list,
-    async put(key, tmpPath) {
-      await new Upload({
-        client,
-        params: { Bucket, Key: k(key), Body: fs.createReadStream(tmpPath) },
-      }).done();
-      await fsp.rm(tmpPath, { force: true });
-    },
-    async move(from, to) {
-      await client.send(new CopyObjectCommand({
-        Bucket, Key: k(to), CopySource: encodeURI(`${Bucket}/${k(from)}`),
-      }));
-      await client.send(new DeleteObjectCommand({ Bucket, Key: k(from) }));
-    },
-    async remove(key) {
-      await client.send(new DeleteObjectCommand({ Bucket, Key: k(key) }));
-    },
-    async removeFolder(folder) {
-      for (const item of await list()) {
-        if (item.key.startsWith(folder + '/')) await this.remove(item.key);
-      }
-    },
-    async read(key) {
-      try {
-        const res = await client.send(new GetObjectCommand({ Bucket, Key: k(key) }));
-        return { stream: res.Body, size: res.ContentLength };
-      } catch (err) {
-        if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) return null;
-        throw err;
-      }
-    },
-  };
-}
-
 function createStorage(env = process.env) {
-  if (env.S3_BUCKET) {
-    return s3Storage({
-      bucket: env.S3_BUCKET,
-      endpoint: env.S3_ENDPOINT,
-      region: env.S3_REGION,
-      accessKeyId: env.S3_ACCESS_KEY_ID,
-      secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-      prefix: env.S3_PREFIX,
-    });
-  }
   return localStorage(path.resolve(env.STORAGE_DIR || './data/vault'));
 }
 

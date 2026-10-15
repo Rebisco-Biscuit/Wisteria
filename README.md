@@ -14,28 +14,18 @@ Matching is by filename without the extension and ignores case. Uploading a file
 
 ## Running locally
 
-```bash
-npm install
-APP_PASSWORD=whatever npm start
-```
+1. `npm install`
+2. Copy `.env.example` to `.env` and set `APP_PASSWORD`
+3. `npm start`
+4. Open http://localhost:3000
 
-Open http://localhost:3000. Files land in `./data/vault` unless you point it at a bucket (see `.env.example`).
+Uploaded files are saved in `./data/vault`.
 
 ## Deploying on Render
 
-Render's free web services lose their disk on every deploy or restart, so there are two ways to go:
+Push the repo to GitHub, then in Render choose **New → Blueprint** and pick the repo. It reads `render.yaml` and asks for `APP_PASSWORD`.
 
-**Free: Render + Cloudflare R2 (recommended)**
-
-1. In Cloudflare, create an R2 bucket and an R2 API token with read/write on it. Note the account endpoint (`https://<account-id>.r2.cloudflarestorage.com`). R2's free tier is 10 GB.
-2. Push this repo to GitHub, then in Render choose **New → Blueprint** and pick the repo. It reads `render.yaml`.
-3. Fill in `APP_PASSWORD`, `S3_BUCKET`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` when asked.
-
-Free services sleep after 15 minutes idle, so the first visit after a while takes ~30 seconds to wake up.
-
-**Paid: Render persistent disk**
-
-Use a Starter instance, add a disk (say mounted at `/var/data`), set `STORAGE_DIR=/var/data/vault` and leave the `S3_*` variables empty.
+Note that Render's free plan wipes the disk on every deploy or restart, so uploads there won't last. Free services also sleep after 15 minutes idle, so the first visit after a while takes ~30 seconds.
 
 ## Settings
 
@@ -43,6 +33,5 @@ Use a Starter instance, add a disk (say mounted at `/var/data`), set `STORAGE_DI
 | --- | --- |
 | `APP_PASSWORD` | required, the one password to get in. Changing it signs out every device |
 | `SESSION_SECRET` | optional, signs the login cookie |
-| `STORAGE_DIR` | where files go when no bucket is set (default `./data/vault`) |
-| `S3_BUCKET`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_PREFIX` | bucket storage |
+| `STORAGE_DIR` | where uploaded files are kept (default `./data/vault`) |
 | `MAX_UPLOAD_MB` | per-file upload limit, default 2048 |

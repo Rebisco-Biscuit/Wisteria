@@ -185,5 +185,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Wisteria is up on port ${PORT} (storage: ${storage.kind})`);
+  console.log(`Wisteria is up on port ${PORT}`);
 });
